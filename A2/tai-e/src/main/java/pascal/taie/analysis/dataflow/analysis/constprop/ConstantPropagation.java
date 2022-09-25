@@ -164,13 +164,18 @@ public class ConstantPropagation extends
         } else if (exp instanceof BinaryExp){
             Value op1 = evaluate(((BinaryExp) exp).getOperand1(), in);
             Value op2 = evaluate(((BinaryExp) exp).getOperand2(), in);
+            // By issue: https://github.com/pascal-lab/Tai-e-assignments/issues/2
+            // judge '/0' and '%0' at first.
+            BinaryExp.Op op = ((BinaryExp) exp).getOperator();
+            if ( op2.isConstant() && op2.getConstant() == 0 && (op == ArithmeticExp.Op.DIV || op == ArithmeticExp.Op.REM) ){
+                return Value.getUndef();
+            }
             if ( op1.isNAC() || op2.isNAC()){
                 return Value.getNAC();
             }
             if ( !op1.isConstant() || !op2.isConstant()){
                 return Value.getUndef();
             }
-            BinaryExp.Op op = ((BinaryExp) exp).getOperator();
             if (op instanceof ArithmeticExp.Op) {
                 switch ((ArithmeticExp.Op)op) {
                     case ADD -> {
