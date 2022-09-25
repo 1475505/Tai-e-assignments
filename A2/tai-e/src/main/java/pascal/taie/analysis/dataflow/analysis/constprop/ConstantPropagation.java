@@ -81,9 +81,6 @@ public class ConstantPropagation extends
     @Override
     public void meetInto(CPFact fact, CPFact target) {
         // TODO - finish me
-        target.forEach((Var var, Value value) -> {
-            target.update(var, meetValue(fact.get(var), value));
-        });
         fact.forEach((Var var, Value value) -> {
             target.update(var, meetValue(target.get(var), value));
         });
@@ -112,12 +109,16 @@ public class ConstantPropagation extends
         var gen = stmt.getDef();
         CPFact old_out = out.copy();
         out.copyFrom(in);
-        if (gen.isPresent() && gen.get() instanceof Var) {
-            if (canHoldInt((Var) gen.get()) && ((DefinitionStmt<?, ?>) stmt).getRValue() != null) {
-                out.update((Var) gen.get(), evaluate(((DefinitionStmt<?, ?>) stmt).getRValue(), in));
+        if (gen.isPresent() && gen.get() instanceof Var def) {
+            if (!(stmt instanceof DefinitionStmt<?,?> definitionStmt) || !canHoldInt(def)){
+                return true;
+            }
+            var rValue = definitionStmt.getRValue();
+            if (rValue != null) {
+                out.update(def, evaluate(rValue, in));
                 System.out.println((((DefinitionStmt<?, ?>) stmt).getRValue()).toString());
             } else {
-                out.update((Var) gen.get(), Value.getNAC());
+                out.update(def, Value.getNAC());
             }
             System.out.println(stmt.getLineNumber() + " | transferred (old_out:" + old_out.toString() + ")"+ stmt.toString() + " from" + in.toString() + "->" + out.toString());
         }
