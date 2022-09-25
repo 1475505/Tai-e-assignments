@@ -85,7 +85,7 @@ public class ConstantPropagation extends
             target.update(var, meetValue(fact.get(var), value));
         });
         fact.forEach((Var var, Value value) -> {
-            fact.update(var, meetValue(target.get(var), value));
+            target.update(var, meetValue(target.get(var), value));
         });
     }
 
@@ -110,14 +110,16 @@ public class ConstantPropagation extends
     public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
         // TODO - finish me
         var gen = stmt.getDef();
-        CPFact old_out = new CPFact();
-        old_out = out.copy();
+        CPFact old_out = out.copy();
+        out.copyFrom(in);
         if (gen.isPresent() && gen.get() instanceof Var) {
-            if (canHoldInt((Var) gen.get()) && ((DefinitionStmt<?, ?>) stmt).getRValue() instanceof Var) {
+            if (canHoldInt((Var) gen.get()) && ((DefinitionStmt<?, ?>) stmt).getRValue() != null) {
                 out.update((Var) gen.get(), evaluate(((DefinitionStmt<?, ?>) stmt).getRValue(), in));
+                System.out.println((((DefinitionStmt<?, ?>) stmt).getRValue()).toString());
             } else {
                 out.update((Var) gen.get(), Value.getNAC());
             }
+            System.out.println("transferred (old_out:" + old_out.toString() + ")"+ stmt.toString() + " from" + in.toString() + "->" + out.toString());
         }
         return out.equals(old_out);
     }
@@ -150,12 +152,20 @@ public class ConstantPropagation extends
     public static Value evaluate(Exp exp, CPFact in) {
         // TODO - finish me
         if (exp instanceof Var){
-            return in.get((Var) exp);
+            if (canHoldInt((Var) exp)) {
+                System.out.println("Evaluate Var " + exp.toString() + "==" + in.get((Var) exp).toString());
+                return in.get((Var) exp);
+            } else {
+                return Value.getNAC();
+            }
         } else if (exp instanceof IntLiteral){
             return Value.makeConstant(((IntLiteral)exp).getValue());
         } else if (exp instanceof BinaryExp){
             Value op1 = evaluate(((BinaryExp) exp).getOperand1(), in);
             Value op2 = evaluate(((BinaryExp) exp).getOperand2(), in);
+            if ( !op1.isConstant() || !op2.isConstant()){
+                return Value.getNAC();
+            }
             BinaryExp.Op op = ((BinaryExp) exp).getOperator();
             if (op instanceof ArithmeticExp.Op) {
                 switch ((ArithmeticExp.Op)op) {
@@ -217,9 +227,19 @@ public class ConstantPropagation extends
                     }
                 }
             }
-            if (op instanceof BitwiseExp.Op){
-                // maybe no need to process it?
-                ;
+            if (op instanceof BitwiseExp.Op) {
+                // maybe no need to process it? NO!!!
+                switch ((BitwiseExp.Op)op){
+                    case OR -> {
+                        return Value.makeConstant(op1.getConstant() | op2.getConstant());
+                    }
+                    case AND -> {
+                        return Value.makeConstant(op1.getConstant() & op2.getConstant());
+                    }
+                    case XOR -> {
+                        return Value.makeConstant(op1.getConstant() ^ op2.getConstant());
+                    }
+                }
             }
         }
         return Value.getNAC();
