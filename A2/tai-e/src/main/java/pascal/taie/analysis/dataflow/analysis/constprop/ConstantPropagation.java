@@ -100,7 +100,7 @@ public class ConstantPropagation extends
         if (v1.isUndef())   return v2;
         if (v2.isUndef())   return v1;
         if (v1.getConstant() == v2.getConstant()){
-            return Value.makeConstant(v1.getConstant());
+            return v1;
         } else {
             return Value.getNAC();
         }
@@ -119,7 +119,7 @@ public class ConstantPropagation extends
             } else {
                 out.update((Var) gen.get(), Value.getNAC());
             }
-            System.out.println("transferred (old_out:" + old_out.toString() + ")"+ stmt.toString() + " from" + in.toString() + "->" + out.toString());
+            System.out.println(stmt.getLineNumber() + " | transferred (old_out:" + old_out.toString() + ")"+ stmt.toString() + " from" + in.toString() + "->" + out.toString());
         }
         return out.equals(old_out);
     }
@@ -163,8 +163,11 @@ public class ConstantPropagation extends
         } else if (exp instanceof BinaryExp){
             Value op1 = evaluate(((BinaryExp) exp).getOperand1(), in);
             Value op2 = evaluate(((BinaryExp) exp).getOperand2(), in);
-            if ( !op1.isConstant() || !op2.isConstant()){
+            if ( op1.isNAC() || op2.isNAC()){
                 return Value.getNAC();
+            }
+            if ( !op1.isConstant() || !op2.isConstant()){
+                return Value.getUndef();
             }
             BinaryExp.Op op = ((BinaryExp) exp).getOperator();
             if (op instanceof ArithmeticExp.Op) {
@@ -228,7 +231,7 @@ public class ConstantPropagation extends
                 }
             }
             if (op instanceof BitwiseExp.Op) {
-                // maybe no need to process it? NO!!!
+                // maybe no need to process it? NO!!! logic rather than bitwise.
                 switch ((BitwiseExp.Op)op){
                     case OR -> {
                         return Value.makeConstant(op1.getConstant() | op2.getConstant());
@@ -241,7 +244,15 @@ public class ConstantPropagation extends
                     }
                 }
             }
+            return Value.getUndef();
         }
+        /*
+        f(y,z) =
+            val(y) op val(z) // if val(y) and val(z) are constants
+            NAC // if val(y) or val(z) is NAC
+            UNDEF // otherwise
+         对于其它情况，该方法会像我们在第 2.1 节提到的那样返回 NAC。
+         */
         return Value.getNAC();
     }
 }
