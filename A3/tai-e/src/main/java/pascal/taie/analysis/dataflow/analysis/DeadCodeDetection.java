@@ -76,7 +76,7 @@ public class DeadCodeDetection extends MethodAnalysis {
             // 当遍历结束时，那些没有被标记的语句就是控制流不可达的。
             if (deadCode.contains(stmt))    continue;
             liveStmt.add(stmt);
-            for (var edge :cfg.getOutEdgesOf(stmt)){
+            for (var edge : cfg.getOutEdgesOf(stmt)){
                 if (liveStmt.contains(edge.getTarget()) || deadCode.contains(edge.getTarget()))
                     continue;
                 queue.offer(edge.getTarget());
@@ -95,7 +95,7 @@ public class DeadCodeDetection extends MethodAnalysis {
                     for (var edge : cfg.getOutEdgesOf(stmt)){
                         int ifVal = (edge.getKind() == Edge.Kind.IF_FALSE)? 0: 1;
                         if (ifVal != condVal.getConstant()){
-                            System.out.println("Got deadcode by if " + ifVal + "|" + stmt);
+                            System.out.println("Got deadcode: if " + ifVal + "|" + stmt);
                             deadCode.add(edge.getTarget());
                         }
                     }
@@ -105,38 +105,29 @@ public class DeadCodeDetection extends MethodAnalysis {
                 var switchVal = ConstantPropagation.evaluate(switchStmt.getVar(), constants.getInFact(stmt));
                 if (switchVal.isConstant()){
                     var caseNo = switchStmt.getCaseValues().indexOf(switchVal.getConstant());
+                    int casesCnt = switchStmt.getCaseValues().size();
                     if (caseNo == -1){
                         for (var branch : switchStmt.getCaseTargets()){
                             deadCode.add(branch.second());
                         }
-                        //queue.add(switchStmt.getDefaultTarget());
                     } else {
-                        for (int i = 0; i < caseNo; i++){
-                            deadCode.add(switchStmt.getTarget(i));
-                        }
-                        for (int i = caseNo; i < switchStmt.getCaseValues().size();){
-                            // queue.add(switchStmt.getTarget(i));
-                            var branch = switchStmt.getTarget(i);
-                            i++;
-                            if (!branch.canFallThrough()) {
-                                while (i < switchStmt.getCaseValues().size()){
-                                    deadCode.add(switchStmt.getTarget(i));
-                                    i++;
-                                }
-                                break;
+                        queue.remove(switchStmt.getDefaultTarget());
+                        for (int i = 0; i < casesCnt; i++){
+                            if (i != caseNo){
+                                queue.remove(switchStmt.getTarget(i));
                             }
                         }
-                        deadCode.add(switchStmt.getDefaultTarget());
+
                     }
                 }
             }
             // 3. 无用赋值
             // 一个局部变量在一条语句中被赋值，但再也没有被该语句后面的语句读取，这样的变量和语句分别被称为无用变量（dead variable，与活跃变量 live variable 相对）和无用赋值。
             // 检测方式：为了检测无用赋值，我们需要预先对被检测代码施用活跃变量分析。对于一个赋值语句，如果它等号左侧的变量（LHS 变量）是一个无用变量（换句话说，not live），且右边的表达式 expr 没有副作用，那么我们可以把它标记为一个无用赋值。
-            if (stmt instanceof AssignStmt<?,?> assignStmt){
+            if (stmt instanceof AssignStmt<?,?> assignStmt) {
                 var lValue = assignStmt.getLValue();
                 var rValue = assignStmt.getRValue();
-                if (DeadCodeDetection.hasNoSideEffect(rValue) && !liveVars.getResult(stmt).contains((Var) lValue)){
+                if (DeadCodeDetection.hasNoSideEffect(rValue) && lValue instanceof Var def && !liveVars.getResult(stmt).contains(def)){
                     deadCode.add(stmt);
                 }
             }
@@ -147,7 +138,7 @@ public class DeadCodeDetection extends MethodAnalysis {
                 continue;
             if (!liveStmt.contains(stmt)) {
                 deadCode.add(stmt);
-                System.out.println("Got deadcode not found in CFG " + "|" + stmt);
+                System.out.println("Got deadcode not in CFG " + "|" + stmt);
             }
         }
         return deadCode;

@@ -58,4 +58,5 @@ public class DeadCodeTest {
     public void testLoops() {
         testDCD("Loops");
     }
+
 }
