@@ -81,7 +81,7 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
             case SPECIAL -> {
                 target.add(dispatch(callSiteMethodRef.getDeclaringClass(), callSiteMethodRef.getSubsignature()));
             }
-            case VIRTUAL -> {
+            case VIRTUAL, INTERFACE -> {
                 Set<JClass> subClazz = new HashSet<>();
                 List<JClass> newClazz = new LinkedList<>();// added in an iterate
                 JClass recv = callSiteMethodRef.getDeclaringClass();
@@ -90,26 +90,12 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
                     int cnt = newClazz.size();
                     for (int i = 0; i < cnt; i++) {
                         JClass tmp = newClazz.remove(0);
-                        newClazz.addAll(hierarchy.getDirectSubclassesOf(tmp));
-                        subClazz.addAll(newClazz);
-                    }
-                }
-                subClazz.add(recv);
-                for (var subclass : subClazz) {
-                    target.add(dispatch(subclass, callSiteMethodRef.getSubsignature()));
-                }
-            }
-            case INTERFACE -> {
-                Set<JClass> subClazz = new HashSet<>();
-                List<JClass> newClazz = new LinkedList<>();// added in an iterate
-                JClass recv = callSiteMethodRef.getDeclaringClass();
-                newClazz.add(recv);
-                while (!newClazz.isEmpty()){
-                    int cnt = newClazz.size();
-                    for (int i = 0; i < cnt; i++) {
-                        JClass tmp = newClazz.remove(0);
-                        newClazz.addAll(hierarchy.getDirectImplementorsOf(tmp));
-                        newClazz.addAll(hierarchy.getDirectSubinterfacesOf(tmp));
+                        if (tmp.isInterface()) {
+                            newClazz.addAll(hierarchy.getDirectImplementorsOf(tmp));
+                            newClazz.addAll(hierarchy.getDirectSubinterfacesOf(tmp));
+                        } else {
+                            newClazz.addAll(hierarchy.getDirectSubclassesOf(tmp));
+                        }
                         subClazz.addAll(newClazz);
                     }
                 }

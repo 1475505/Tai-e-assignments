@@ -68,6 +68,7 @@ class InterSolver<Method, Node, Fact> {
         for (Method method : icfg.entryMethods().toList()){
             Node node = icfg.getEntryOf(method);
             result.setOutFact(node, analysis.newBoundaryFact(node));
+            result.setInFact(node, analysis.newBoundaryFact(node));
         }
     }
 
