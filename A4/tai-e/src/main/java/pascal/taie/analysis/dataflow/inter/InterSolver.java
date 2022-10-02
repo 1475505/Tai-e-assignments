@@ -73,12 +73,13 @@ class InterSolver<Method, Node, Fact> {
 
     private void doSolve() {
         // TODO - finish me
-        Queue<Node> workList = new LinkedList<>(); // queue
+        workList = new LinkedList<>(); // queue
         for (Node node : icfg){
-            workList.add(node);
+            workList.offer(node);
         }
         while (!workList.isEmpty()) {
             Node node = workList.poll();
+            System.out.println("Start Process:" + node.toString());
             for (var edge : icfg.getInEdgesOf(node)) {
                 analysis.meetInto(analysis.transferEdge(edge, result.getOutFact(edge.getSource())), result.getInFact(node));
             }

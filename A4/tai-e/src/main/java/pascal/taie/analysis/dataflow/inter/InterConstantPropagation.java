@@ -100,9 +100,11 @@ public class InterConstantPropagation extends
         CPFact cpFact = out.copy();
         if (edge.getSource() instanceof Invoke callSite){
             var def = callSite.getResult();
-            if (def != null)
+            if (def != null) {
                 cpFact.remove(def);
+            }
         }
+        System.out.println(edge + ":" + out + "->" + cpFact);
         return cpFact;
     }
 
@@ -116,6 +118,7 @@ public class InterConstantPropagation extends
         for (int i = 0; i < params.size(); i++){
             cpFact.update(params.get(i), callSiteOut.get(args.get(i)));
         }
+        System.out.println(edge + ":" + callSiteOut + "->" + cpFact);
         return cpFact;
     }
 
@@ -132,6 +135,7 @@ public class InterConstantPropagation extends
             }
             cpFact.update(rcv, target);
         }
+        System.out.println(edge + ":" + returnOut + "->" + cpFact);
         return cpFact;
     }
 }

@@ -22,9 +22,8 @@
 
 package pascal.taie.analysis.graph.callgraph;
 
-import fj.test.Bool;
+
 import pascal.taie.World;
-import pascal.taie.ir.proginfo.MethodRef;
 import pascal.taie.ir.stmt.Invoke;
 import pascal.taie.language.classes.ClassHierarchy;
 import pascal.taie.language.classes.JClass;
@@ -82,22 +81,40 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
             case SPECIAL -> {
                 target.add(dispatch(callSiteMethodRef.getDeclaringClass(), callSiteMethodRef.getSubsignature()));
             }
-            case VIRTUAL, INTERFACE -> {
+            case VIRTUAL -> {
                 Set<JClass> subClazz = new HashSet<>();
-                Queue<JClass> newClazz = new LinkedList<>();// added in an iterate
+                List<JClass> newClazz = new LinkedList<>();// added in an iterate
                 JClass recv = callSiteMethodRef.getDeclaringClass();
                 newClazz.add(recv);
-                boolean changed = true;
                 while (!newClazz.isEmpty()){
-                    JClass tmp = newClazz.poll();
-                    newClazz.addAll(hierarchy.getDirectSubclassesOf(tmp));
-                    newClazz.addAll(hierarchy.getDirectImplementorsOf(tmp));
-                    newClazz.addAll(hierarchy.getDirectSubinterfacesOf(tmp));
-                    changed = subClazz.addAll(newClazz); // maybe no need?
+                    int cnt = newClazz.size();
+                    for (int i = 0; i < cnt; i++) {
+                        JClass tmp = newClazz.remove(0);
+                        newClazz.addAll(hierarchy.getDirectSubclassesOf(tmp));
+                        subClazz.addAll(newClazz);
+                    }
                 }
                 subClazz.add(recv);
                 for (var subclass : subClazz) {
-                    System.out.println("Find subclass of" + subclass.toString());
+                    target.add(dispatch(subclass, callSiteMethodRef.getSubsignature()));
+                }
+            }
+            case INTERFACE -> {
+                Set<JClass> subClazz = new HashSet<>();
+                List<JClass> newClazz = new LinkedList<>();// added in an iterate
+                JClass recv = callSiteMethodRef.getDeclaringClass();
+                newClazz.add(recv);
+                while (!newClazz.isEmpty()){
+                    int cnt = newClazz.size();
+                    for (int i = 0; i < cnt; i++) {
+                        JClass tmp = newClazz.remove(0);
+                        newClazz.addAll(hierarchy.getDirectImplementorsOf(tmp));
+                        newClazz.addAll(hierarchy.getDirectSubinterfacesOf(tmp));
+                        subClazz.addAll(newClazz);
+                    }
+                }
+                subClazz.add(recv);
+                for (var subclass : subClazz) {
                     target.add(dispatch(subclass, callSiteMethodRef.getSubsignature()));
                 }
             }
@@ -115,7 +132,7 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
         // TODO - finish me
         var method = jclass.getDeclaredMethod(subsignature);
         if (method != null && !method.isAbstract()){
-            return jclass.getDeclaredMethod(subsignature);
+            return method;
         }
         if (jclass.getSuperClass() != null){
             return dispatch(jclass.getSuperClass(), subsignature);
