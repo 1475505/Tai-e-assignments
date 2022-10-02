@@ -120,7 +120,7 @@ public class ConstantPropagation extends
                 out.update(def, Value.getNAC());
             }
         }
-        return out.equals(old_out);
+        return !out.equals(old_out);
     }
 
     /**

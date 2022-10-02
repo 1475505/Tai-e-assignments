@@ -84,7 +84,7 @@ class InterSolver<Method, Node, Fact> {
             for (var edge : icfg.getInEdgesOf(node)) {
                 analysis.meetInto(analysis.transferEdge(edge, result.getOutFact(edge.getSource())), result.getInFact(node));
             }
-            if (!analysis.transferNode(node, result.getInFact(node), result.getOutFact(node))) {
+            if (analysis.transferNode(node, result.getInFact(node), result.getOutFact(node))) {
                 workList.addAll(icfg.getSuccsOf(node));
             }
         }
