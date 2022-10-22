@@ -47,9 +47,9 @@ public class _2CallSelector implements ContextSelector {
         var contexts = callSite.getContext();
         var len = contexts.getLength();
         if (len > 0) {
-            return ListContext.make(contexts.getElementAt(len - 1), callSite.getContext());
+            return ListContext.make(contexts.getElementAt(len - 1), callSite.getCallSite());
         } else {
-            return ListContext.make(callSite.getContext());
+            return ListContext.make(callSite.getCallSite());
         }
     }
 
@@ -65,7 +65,7 @@ public class _2CallSelector implements ContextSelector {
         var contexts = method.getContext();
         var len = contexts.getLength();
         if (len > 0) {
-            return ListContext.make(contexts.getElementAt(len - 1), method.getContext());
+            return ListContext.make(contexts.getElementAt(len - 1));
         } else {
             return getEmptyContext();
         }

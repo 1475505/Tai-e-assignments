@@ -53,7 +53,7 @@ public class _2ObjSelector implements ContextSelector {
         if (recv == null) {
             return selectContext(callSite, callee);
         }
-        var contexts = callSite.getContext();
+        var contexts = recv.getContext();
         var len = contexts.getLength();
         if (len > 0) {
             return ListContext.make(contexts.getElementAt(len - 1), recv.getObject());

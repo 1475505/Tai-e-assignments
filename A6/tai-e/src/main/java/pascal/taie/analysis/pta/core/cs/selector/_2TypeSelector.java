@@ -50,7 +50,7 @@ public class _2TypeSelector implements ContextSelector {
     @Override
     public Context selectContext(CSCallSite callSite, CSObj recv, JMethod callee) {
         // TODO - finish me
-        var contexts = callSite.getContext();
+        var contexts = recv.getContext();
         var len = contexts.getLength();
         if (len > 0) {
             return ListContext.make(contexts.getElementAt(len - 1), recv.getObject().getContainerType());
